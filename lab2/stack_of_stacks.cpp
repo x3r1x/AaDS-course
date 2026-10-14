@@ -3,6 +3,7 @@
 //
 
 /*
+
 Организовать  в основной  памяти  с помощью указателей
 стек из стеков. Обеспечить операции ведения внутреннего стека
 из вершины внешнего стека, расширения и  сокращения  внешнего
@@ -16,6 +17,8 @@
 1. Презентация Галочкина Владимира Ивановича - https://docs.google.com/presentation/d/1Z98KHqSmGZsxG8AVDNnvIcsyQfeGUrfY/edit?slide=id.p3#slide=id.p3
 2. Тред на stackoverflow - https://ru.stackoverflow.com/questions/857066/%D0%9E%D0%B1%D1%8A%D1%8F%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5-string-%D0%B2-switch-%D0%BF%D1%80%D0%B8%D0%B2%D0%BE%D0%B4%D0%B8%D1%82-%D0%BA-%D0%BE%D1%88%D0%B8%D0%B1%D0%BA%D0%B5-cannot-jump-from-switch-statement
 
+
+
 */
 
 #include <iostream>
@@ -27,6 +30,8 @@ constexpr int PRINT_STACK = 3;
 constexpr int DELETE_STACK = 4;
 constexpr int HELP = 5;
 constexpr int EXIT = 6;
+constexpr int PUSH_TO_UNDERSTACK = 7;
+constexpr int POP_FROM_UNDERSTACK = 8;
 
 struct StackStruct
 {
@@ -42,7 +47,7 @@ struct HyperStackStruct
 
 static void Push(StackStruct*& head, const int elem)
 {
-	StackStruct* newElement = new StackStruct;
+	auto* newElement = new StackStruct;
 	newElement->value = elem;
 	newElement->next = head;
 	head = newElement;
@@ -62,6 +67,11 @@ static int Pop(StackStruct*& head)
 static void PrintStack(const StackStruct* head)
 {
 	const StackStruct* element = head;
+
+	if (head == nullptr)
+	{
+		cout << "Пустой стек!";
+	}
 
 	while (element)
 	{
@@ -86,7 +96,7 @@ static void ClearStack(const StackStruct* head)
 
 static void PushToHyper(HyperStackStruct*& head, StackStruct* stack)
 {
-	HyperStackStruct* newStack = new HyperStackStruct;
+	auto* newStack = new HyperStackStruct;
 	newStack->next = head;
 	newStack->stack = stack;
 	head = newStack;
@@ -132,7 +142,9 @@ static void PrintMainHelp()
 		 << "3. Печать киберстека" << endl
 		 << "4. Удаление киберстека" << endl
 		 << "5. Помощь" << endl
-		 << "6. Выход" << endl;
+		 << "6. Выход" << endl
+		 << "7. Положить в подстек" << endl
+		 << "8. Достать из подстека" << endl;
 }
 
 static void PrintStackHelp()
@@ -145,15 +157,23 @@ static void PrintStackHelp()
 		 << "6. Выход из создания стека" << endl;
 }
 
+static StackStruct* CreateOneNodeStack(int element)
+{
+	StackStruct* top = nullptr;
+	Push(top, element);
+
+	return top;
+}
+
 static StackStruct* CreateNewStack()
 {
 	StackStruct* top = nullptr;
 	int answer = 1;
 
-	PrintStackHelp();
-
 	while (answer != 6)
 	{
+		PrintStackHelp();
+
 		cin >> answer;
 
 		switch (answer)
@@ -215,10 +235,10 @@ int main()
 	HyperStackStruct* hyperTop = nullptr;
 	int answer = 0;
 
-	PrintMainHelp();
-
 	while (answer != 6)
 	{
+		PrintMainHelp();
+
 		cin >> answer;
 
 		switch (answer)
@@ -274,6 +294,37 @@ int main()
 		case HELP:
 			PrintMainHelp();
 			break;
+		case PUSH_TO_UNDERSTACK:
+			int value;
+			cout << "Введите число" << endl;
+			cin >> value;
+
+			if (hyperTop)
+			{
+				Push(hyperTop->stack, value);
+			}
+			else
+			{
+				hyperTop = new HyperStackStruct;
+				hyperTop->stack = CreateOneNodeStack(value);
+				hyperTop->next = nullptr;
+			}
+
+			break;
+		case POP_FROM_UNDERSTACK:
+		{
+			if (hyperTop->stack)
+			{
+				const int poppedValue = Pop(hyperTop->stack);
+				cout << "Вы достали " << poppedValue << endl;
+			}
+			else
+			{
+				cout << "Подстека нет!" << endl;
+			}
+
+			break;
+		}
 		default:
 			return 0;
 		}
