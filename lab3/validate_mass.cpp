@@ -131,56 +131,116 @@ void PrintTree(const unique_ptr<Node>& node, const int depth)
 	}
 }
 
+bool CalculateMasses(const unique_ptr<Node>& node);
+
+bool CalculateLeafMass(const unique_ptr<Node>& leafNode)
+{
+	leafNode->minMass = leafNode->mass;
+	leafNode->maxMass = leafNode->mass;
+	leafNode->isCorrect = true;
+	return true;
+}
+
+bool CalculateAndMass(const unique_ptr<Node>& andNode)
+{
+	for (auto& child: andNode->children)
+	{
+		if (!CalculateMasses(child))
+		{
+			andNode->isCorrect = false;
+			return false;
+		}
+
+		andNode->minMass += child->minMass;
+		andNode->maxMass += child->maxMass;
+	}
+
+	andNode->isCorrect = true;
+	return true;
+}
+
+bool CalculateOrMass(const unique_ptr<Node>& orNode)
+{
+	orNode->minMass = MAX_MASS;
+	orNode->maxMass = 0;
+	bool found = false;
+
+	for (auto& child: orNode->children)
+	{
+		if (CalculateMasses(child))
+		{
+			found = true;
+			orNode->minMass = min(orNode->minMass, child->minMass);
+			orNode->maxMass = max(orNode->maxMass, child->maxMass);
+		}
+	}
+
+	orNode->isCorrect = found;
+	return found;
+}
+
 bool CalculateMasses(const unique_ptr<Node>& node)
 {
 	if (node->type == NodeType::LEAF)
 	{
-		node->minMass = node->mass;
-		node->maxMass = node->mass;
-		node->isCorrect = true;
-		return true;
+		return CalculateLeafMass(node);
 	}
 
 	if (node->type == NodeType::AND)
 	{
-		for (auto& child : node->children)
-		{
-			if (!CalculateMasses(child))
-			{
-				node->isCorrect = false;
-				return false;
-			}
-
-			node->minMass += child->minMass;
-			node->maxMass += child->maxMass;
-		}
-
-		node->isCorrect = true;
-		return true;
+		return CalculateAndMass(node);
 	}
 
 	if (node->type == NodeType::OR)
 	{
-		node->minMass = MAX_MASS;
-		node->maxMass = 0;
-		bool found = false;
-
-		for (auto& child : node->children)
-		{
-			if (CalculateMasses(child))
-			{
-				found = true;
-				node->maxMass = max(node->maxMass, child->maxMass);
-				node->minMass = min(node->minMass, child->minMass);
-			}
-		}
-
-		node->isCorrect = found;
-		return found;
+		return CalculateOrMass(node);
 	}
 
 	return false;
 }
+
+bool ValidateMassTree(const unique_ptr<Node>& node, int maxNeededMass);
+
+bool ValidateLeafNode(const unique_ptr<Node>& leafNode, const int maxNeededMass)
+{
+	return leafNode->mass <= maxNeededMass;
+}
+
+bool ValidateOrNode(const unique_ptr<Node>& orNode, const int maxNeededMass)
+{
+	auto child = orNode->children.begin();
+
+	while (child != orNode->children.end())
+	{
+		if (ValidateMassTree(*child, maxNeededMass))
+		{
+			++child;
+		}
+		else
+		{
+			child = orNode->children.erase(child);
+		}
+	}
+
+	return !orNode->children.empty();
+}
+
+bool ValidateAndNode(const unique_ptr<Node>& andNode, const int maxNeededMass)
+{
+	for (const auto& child : andNode->children)
+	{
+		const int otherChildrenMinimum = andNode->minMass - child->minMass;
+		int thisChileMaxNeededMass = maxNeededMass - otherChildrenMinimum;
+
+		if (!ValidateMassTree(child, thisChileMaxNeededMass))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 
 bool ValidateMassTree(const unique_ptr<Node>& node, const int maxNeededMass)
 {
@@ -196,43 +256,20 @@ bool ValidateMassTree(const unique_ptr<Node>& node, const int maxNeededMass)
 
 	if (node->type == NodeType::LEAF)
 	{
-		return node->mass <= maxNeededMass;
+		return ValidateLeafNode(node, maxNeededMass);
 	}
 
 	if (node->type == NodeType::OR)
 	{
-		auto child = node->children.begin();
-
-		while (child != node->children.end())
-		{
-			if (ValidateMassTree(*child, maxNeededMass))
-			{
-				++child;
-			}
-			else
-			{
-				child = node->children.erase(child);
-			}
-		}
-
-		return !node->children.empty();
+		return ValidateOrNode(node, maxNeededMass);
 	}
 
 	if (node->type == NodeType::AND)
 	{
-		for (const auto& child : node->children)
-		{
-			const int otherChildrenMinimum = node->minMass - child->minMass;
-			int thisChileMaxNeededMass = maxNeededMass - otherChildrenMinimum;
-
-			if (!ValidateMassTree(child, thisChileMaxNeededMass))
-			{
-				return false;
-			}
-		}
+		return ValidateAndNode(node, maxNeededMass);
 	}
 
-	return true;
+	return false;
 }
 
 int main(int _, char* argv[])
