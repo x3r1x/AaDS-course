@@ -4,7 +4,7 @@
 
 /*
 
-В  листьях  И-ИЛИ  дерева,  соответствующего некоторому
+24. В  листьях  И-ИЛИ  дерева,  соответствующего некоторому
 множеству  конструкций,  заданы   значения   массы.   Известно
 максимально допустимое значение массы изделия. Требуется усечь
 дерево   так,   чтобы   дерево    включало    все    элементы,
@@ -25,7 +25,6 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include <algorithm>
 
 using namespace std;
 
@@ -143,7 +142,7 @@ bool CalculateLeafMass(const unique_ptr<Node>& leafNode)
 
 bool CalculateAndMass(const unique_ptr<Node>& andNode)
 {
-	for (auto& child: andNode->children)
+	for (auto& child : andNode->children)
 	{
 		if (!CalculateMasses(child))
 		{
@@ -165,7 +164,7 @@ bool CalculateOrMass(const unique_ptr<Node>& orNode)
 	orNode->maxMass = 0;
 	bool found = false;
 
-	for (auto& child: orNode->children)
+	for (auto& child : orNode->children)
 	{
 		if (CalculateMasses(child))
 		{
@@ -241,7 +240,6 @@ bool ValidateAndNode(const unique_ptr<Node>& andNode, const int maxNeededMass)
 	return true;
 }
 
-
 bool ValidateMassTree(const unique_ptr<Node>& node, const int maxNeededMass)
 {
 	if (!node->isCorrect || node->minMass > maxNeededMass)
@@ -292,5 +290,9 @@ int main(int _, char* argv[])
 	if (ValidateMassTree(root, maxMass))
 	{
 		PrintTree(root, 0);
+	}
+	else
+	{
+		cout << "Дерево пустое!" << endl;
 	}
 }
