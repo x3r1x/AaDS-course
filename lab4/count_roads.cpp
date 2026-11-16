@@ -29,8 +29,8 @@
 
 using namespace std;
 
-
-constexpr int MAX_EDGE_AMOUNT = 100;
+constexpr int MAX_EDGE_AMOUNT = 1000;
+constexpr int MAX_VALUE = INT_MAX / 4;
 
 struct Edge
 {
@@ -45,14 +45,19 @@ struct Vertex
 
 static void FindSecondShortestPath(const vector<Vertex>& graph, int startVertex)
 {
-	vector<int> distance1(graph.size(), INT_MAX);
-	vector<int> distance2(graph.size(), INT_MAX);
+	if (graph.empty() || startVertex < 0 || startVertex >= static_cast<int>(graph.size()))
+	{
+		cout << "Граф пуст или указана некорректная стартовая вершина" << endl;
+		return;
+	}
+
+	vector<int> distance1(graph.size(), MAX_VALUE);
+	vector<int> distance2(graph.size(), MAX_VALUE);
 	distance1[startVertex] = 0;
 
 	//         distance
 	vector<pair<int, int>> queue;
 	//				 number_of_city
-
 
 	queue.emplace_back(0, startVertex);
 
@@ -77,8 +82,13 @@ static void FindSecondShortestPath(const vector<Vertex>& graph, int startVertex)
 			continue;
 		}
 
-		for (const Edge& edge: graph[info.second].edges)
+		for (const Edge& edge : graph[info.second].edges)
 		{
+			if (edge.to < 0 || edge.to >= static_cast<int>(graph.size()) || edge.weight < 0 || edge.weight == INT_MAX)
+			{
+				continue;
+			}
+
 			int newDistance = info.first + edge.weight;
 
 			if (newDistance < distance1[edge.to])
@@ -99,10 +109,20 @@ static void FindSecondShortestPath(const vector<Vertex>& graph, int startVertex)
 
 	for (int i = 0; i < graph.size(); i++)
 	{
-		if (distance2[i] != INT_MAX)
+		cout << "Vertex " << i << ": ";
+		if (distance1[i] == MAX_VALUE)
 		{
-			cout << "Vertex " << i << " distance 1 " << distance1[i] << "; distance 2 " << distance2[i] << ";" << endl;
+			cout << "no distances;";
 		}
+		else if (distance2[i] == MAX_VALUE)
+		{
+			cout << "distance 1 = " << distance1[i] << "; distance 2 = no;";
+		}
+		else
+		{
+			cout << "distance 1 = " << distance1[i] << "; distance 2 = " << distance2[i] << ";";
+		}
+		cout << endl;
 	}
 }
 
@@ -124,10 +144,8 @@ static vector<Vertex> GetVertexFromFile(ifstream& stream)
 			edges.resize(startEdge + 1);
 		}
 
-		edges[startEdge].edges.push_back({
-			endEdge,
-			weight
-		});
+		edges[startEdge].edges.push_back({ endEdge,
+			weight });
 	}
 
 	return edges;
@@ -137,11 +155,11 @@ static void PrintGraph(const vector<Vertex>& edges)
 {
 	int i = 0;
 
-	for (const auto& edge: edges)
+	for (const auto& edge : edges)
 	{
 		cout << "Edge " << i << ": ";
 
-		for (auto target: edge.edges)
+		for (auto target : edge.edges)
 		{
 			cout << target.to << " goes by " << target.weight << "; ";
 		}
